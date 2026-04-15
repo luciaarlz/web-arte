@@ -4,165 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ArtStyle IA | Curador Experto</title>
-    
     <link rel="icon" type="image/png" href="logo.png">
-    
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
-        :root { 
-            --bg: #0e1117; 
-            --accent: #a569bd; 
-            --text: #ffffff; 
-            --card-bg: rgba(255, 255, 255, 0.03); 
-        }
-        
-        body { 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            min-height: 100vh; 
-            scroll-behavior: smooth;
-        }
-
-        /* HEADER CON EL NUEVO LOGO */
-        .header { 
-            padding: 40px 20px; 
-            text-align: center; 
-            width: 100%; 
-            border-bottom: 1px solid rgba(255,255,255,0.05); 
-            background: linear-gradient(to bottom, #1a1a2e, var(--bg));
-        }
-
-        .header img {
-            width: 70px; /* Tamaño del logo en cabecera */
-            height: 70px;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 0 10px rgba(165, 105, 189, 0.3));
-        }
-
-        h1 { 
-            margin: 0; 
-            letter-spacing: 5px; 
-            font-weight: 300; 
-            text-transform: uppercase; 
-            background: linear-gradient(90deg, #fff, var(--accent)); 
-            -webkit-background-clip: text; 
-            background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-        }
-
-        .main-container { 
-            width: 95%; 
-            max-width: 550px; 
-            margin-top: 20px; 
-            padding-bottom: 60px; 
-        }
-
-        .art-frame { 
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 15px;
-            background: #000;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            min-height: 200px;
-        }
-
-        #display-image { 
-            width: 100%; 
-            height: auto; 
-            display: none;
-            object-fit: contain;
-        }
-
-        #placeholder-text { 
-            color: #444; 
-            padding: 60px 20px; 
-            text-align: center;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-        }
-
-        .controls { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 12px; 
-            margin-top: 20px; 
-        }
-
-        button { 
-            background: rgba(255,255,255,0.05); 
-            border: 1px solid rgba(255,255,255,0.1); 
-            color: white; 
-            padding: 15px; 
-            border-radius: 10px; 
-            cursor: pointer; 
-            transition: 0.2s; 
-            text-transform: uppercase; 
-            font-size: 10px; 
-            font-weight: 600; 
-        }
-
+        :root { --bg: #0e1117; --accent: #a569bd; --text: #ffffff; --card-bg: rgba(255, 255, 255, 0.03); }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; scroll-behavior: smooth; }
+        .header { padding: 40px 20px; text-align: center; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.05); background: linear-gradient(to bottom, #1a1a2e, var(--bg)); }
+        .header img { width: 70px; height: 70px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(165, 105, 189, 0.3)); }
+        h1 { margin: 0; letter-spacing: 5px; font-weight: 300; text-transform: uppercase; background: linear-gradient(90deg, #fff, var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .main-container { width: 95%; max-width: 550px; margin-top: 20px; padding-bottom: 60px; }
+        .art-frame { border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); min-height: 200px; }
+        #display-image { width: 100%; height: auto; display: none; object-fit: contain; }
+        #placeholder-text { color: #444; padding: 60px 20px; text-align: center; font-size: 0.9rem; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-size: 10px; font-weight: 600; }
         button:hover:not(:disabled) { background: white; color: black; }
-        
-        .analyze-btn { 
-            grid-column: span 2; 
-            background: linear-gradient(45deg, #6a11cb, #2575fc); 
-            border: none; 
-            font-size: 12px; 
-        }
-
-        #status-msg { 
-            margin-top: 15px; 
-            font-size: 0.75rem; 
-            color: var(--accent); 
-            text-align: center; 
-            font-weight: bold;
-        }
-
-        #result-box { 
-            margin-top: 40px; 
-            padding: 30px; 
-            border-radius: 20px; 
-            background: rgba(255,255,255,0.02); 
-            border: 1px solid rgba(255,255,255,0.05); 
-            display: none; 
-            animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
+        .analyze-btn { grid-column: span 2; background: linear-gradient(45deg, #6a11cb, #2575fc); border: none; font-size: 12px; }
+        #status-msg { margin-top: 15px; font-size: 0.75rem; color: var(--accent); text-align: center; font-weight: bold; }
+        #result-box { margin-top: 40px; padding: 30px; border-radius: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); display: none; animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-
-        #main-prediction {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        #main-prediction span {
-            display: block;
-            font-size: 0.7rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 8px;
-        }
-
-        #winner-name {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--accent);
-            text-shadow: 0 0 25px rgba(165, 105, 189, 0.4);
-            margin: 0;
-        }
-
+        #main-prediction { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        #main-prediction span { display: block; font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 8px; }
+        #winner-name { font-size: 2.5rem; font-weight: 700; color: var(--accent); text-shadow: 0 0 25px rgba(165, 105, 189, 0.4); margin: 0; }
         .chart-row { margin-bottom: 15px; }
         .chart-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; color: #aaa; }
         .bar-bg { height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
@@ -170,35 +34,26 @@
     </style>
 </head>
 <body>
-
     <div class="header">
-        <img src="logo.png" alt="Logo ArtStyle IA">
+        <img src="logo.png" alt="Logo">
         <h1>ArtStyle IA</h1>
     </div>
-    
     <div class="main-container">
         <div class="art-frame">
             <div id="placeholder-text">SELECCIONA UNA OBRA MAESTRA</div>
-            <img id="display-image" src="" alt="Obra a analizar">
+            <img id="display-image" src="" alt="Obra">
         </div>
-
         <canvas id="ai-canvas" width="128" height="128" style="display:none;"></canvas>
-
-        <div id="status-msg">Iniciando motor neuronal...</div>
-
+        <div id="status-msg">Cargando motor neuronal...</div>
         <div class="controls">
             <button onclick="document.getElementById('file-input').click()">🖼️ Galería</button>
             <button onclick="alert('Cámara próximamente...')">📷 Cámara</button>
             <input type="file" id="file-input" style="display:none" accept="image/*">
-            <button id="btn-analyze" class="analyze-btn" onclick="runInference()" disabled>Cargando Inteligencia...</button>
+            <button id="btn-analyze" class="analyze-btn" onclick="runInference()" disabled>Iniciando...</button>
         </div>
-
         <div id="result-box">
-            <div id="main-prediction">
-                <span>ESTILO</span>
-                <h2 id="winner-name"></h2>
-            </div>
-            <p style="font-size:0.65rem; color:#444; text-transform:uppercase; margin-bottom:18px; letter-spacing: 1.5px; text-align: center;">Análisis Detallado de Confianza</p>
+            <div id="main-prediction"><span>ESTILO</span><h2 id="winner-name"></h2></div>
+            <p style="font-size:0.65rem; color:#444; text-transform:uppercase; margin-bottom:18px; text-align:center;">Análisis Detallado</p>
             <div id="chart-content"></div>
         </div>
     </div>
@@ -243,75 +98,53 @@
         async function runInference() {
             if(!session || !displayImage.src) return;
             statusMsg.innerText = "DESCIFRANDO ARTE...";
-            
             aiCtx.drawImage(displayImage, 0, 0, 128, 128);
-            
             const imgData = aiCtx.getImageData(0, 0, 128, 128);
             const input = new Float32Array(1 * 3 * 128 * 128);
-            
             for (let i = 0; i < 128 * 128; i++) {
                 input[i] = (imgData.data[i * 4] / 255 - 0.485) / 0.229;
                 input[i + 16384] = (imgData.data[i * 4 + 1] / 255 - 0.456) / 0.224;
                 input[i + 32768] = (imgData.data[i * 4 + 2] / 255 - 0.406) / 0.225;
             }
-
             const tensor = new ort.Tensor('float32', input, [1, 3, 128, 128]);
             const output = await session.run({ input: tensor });
             const probabilities = softmax(Array.from(output.output.data));
-
             displayResults(probabilities);
             statusMsg.innerText = "ANÁLISIS COMPLETADO";
         }
 
         function displayResults(probs) {
             const resultBox = document.getElementById('result-box');
-            const winnerName = document.getElementById('winner-name');
-            const chartContent = document.getElementById('chart-content');
-            
             resultBox.style.display = 'block';
+            const results = probs.map((p, i) => ({ name: classes[i], prob: p })).sort((a, b) => b.prob - a.prob);
+            document.getElementById('winner-name').innerText = results[0].name;
+            const chartContent = document.getElementById('chart-content');
             chartContent.innerHTML = "";
-
-            const results = probs.map((p, i) => ({ name: classes[i], prob: p }))
-                                 .sort((a, b) => b.prob - a.prob);
-
-            winnerName.innerText = results[0].name;
-
             results.forEach(res => {
                 const percentage = (res.prob * 100).toFixed(1);
-                const row = `
-                    <div class="chart-row">
-                        <div class="chart-label">
-                            <span>${res.name}</span>
-                            <span>${percentage}%</span>
-                        </div>
-                        <div class="bar-bg">
-                            <div class="bar-fill" style="width: ${percentage}%"></div>
-                        </div>
-                    </div>
-                `;
-                chartContent.innerHTML += row;
+                chartContent.innerHTML += `<div class="chart-row"><div class="chart-label"><span>${res.name}</span><span>${percentage}%</span></div><div class="bar-bg"><div class="bar-fill" style="width: ${percentage}%"></div></div></div>`;
             });
-
-            setTimeout(() => {
-                resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+            setTimeout(() => { resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
         }
 
-        // --- REGISTRO DE PWA CON SOLUCIÓN AL PROBLEMA DE CACHÉ ---
+        // --- SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA ---
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js').then(reg => {
-                // Cuando el Service Worker detecta una actualización
-                reg.addEventListener('updatefound', () => {
-                    const newWorker = reg.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        // Si la actualización está instalada y esperando
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log("Nueva versión detectada. Recargando para actualizar...");
-                            // Forzamos la recarga de la página instantáneamente
-                            location.reload(); 
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            window.location.reload();
                         }
-                    });
-                });
+                    };
+                };
+            });
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    window.location.reload();
+                    refreshing = true;
+                }
             });
         }
     </script>
