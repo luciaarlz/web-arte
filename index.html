@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArtVision AI | Galería Pro</title>
+    <title>ArtStyle IA | Curador Experto</title>
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
@@ -26,16 +29,25 @@
             scroll-behavior: smooth;
         }
 
+        /* HEADER CON EL NUEVO LOGO */
         .header { 
-            padding: 30px 20px; 
+            padding: 40px 20px; 
             text-align: center; 
             width: 100%; 
             border-bottom: 1px solid rgba(255,255,255,0.05); 
+            background: linear-gradient(to bottom, #1a1a2e, var(--bg));
+        }
+
+        .header img {
+            width: 70px; /* Tamaño del logo en cabecera */
+            height: 70px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 10px rgba(165, 105, 189, 0.3));
         }
 
         h1 { 
             margin: 0; 
-            letter-spacing: 4px; 
+            letter-spacing: 5px; 
             font-weight: 300; 
             text-transform: uppercase; 
             background: linear-gradient(90deg, #fff, var(--accent)); 
@@ -51,7 +63,6 @@
             padding-bottom: 60px; 
         }
 
-        /* MARCO PARA LA IMAGEN EN ALTA CALIDAD */
         .art-frame { 
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 15px;
@@ -67,7 +78,7 @@
         #display-image { 
             width: 100%; 
             height: auto; 
-            display: none; /* Se activa al subir foto */
+            display: none;
             object-fit: contain;
         }
 
@@ -160,7 +171,10 @@
 </head>
 <body>
 
-    <div class="header"><h1>ArtVision AI</h1></div>
+    <div class="header">
+        <img src="logo.png" alt="Logo ArtStyle IA">
+        <h1>ArtStyle IA</h1>
+    </div>
     
     <div class="main-container">
         <div class="art-frame">
@@ -230,7 +244,6 @@
             if(!session || !displayImage.src) return;
             statusMsg.innerText = "DESCIFRANDO ARTE...";
             
-            // Dibujamos la imagen original en el canvas pequeño oculto
             aiCtx.drawImage(displayImage, 0, 0, 128, 128);
             
             const imgData = aiCtx.getImageData(0, 0, 128, 128);
@@ -282,6 +295,24 @@
             setTimeout(() => {
                 resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
+        }
+
+        // --- REGISTRO DE PWA CON SOLUCIÓN AL PROBLEMA DE CACHÉ ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                // Cuando el Service Worker detecta una actualización
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        // Si la actualización está instalada y esperando
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log("Nueva versión detectada. Recargando para actualizar...");
+                            // Forzamos la recarga de la página instantáneamente
+                            location.reload(); 
+                        }
+                    });
+                });
+            });
         }
     </script>
 </body>

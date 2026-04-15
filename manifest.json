@@ -1,11 +1,20 @@
 {
-  "name": "ArtVision AI",
-  "short_name": "ArtAI",
-  "start_url": "./index.html",
+  "name": "ArtStyle IA",
+  "short_name": "ArtStyle",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0e1117",
   "theme_color": "#a569bd",
   "icons": [
-    { "src": "https://cdn-icons-png.flaticon.com/512/103/103442.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
