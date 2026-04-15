@@ -1,45 +1,18 @@
-const CACHE_NAME = 'artstyle-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  './logo.png',
-  './manifest.json',
-  './model.onnx'
-];
+const CACHE_NAME = 'artstyle-v2';
+const ASSETS = ['./', './index.html', './logo.png', './manifest.json', './model.onnx'];
 
-// Instalación: Forzamos la activación inmediata
-self.addEventListener('install', (event) => {
-  self.skipWaiting(); 
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
-  );
+self.addEventListener('install', (e) => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
 });
 
-// Activación: Limpiamos cachés antiguas y tomamos el control de las pestañas
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    Promise.all([
-      self.clients.claim(),
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cache) => {
-            if (cache !== CACHE_NAME) {
-              return caches.delete(cache);
-            }
-          })
-        );
-      })
-    ])
-  );
+self.addEventListener('activate', (e) => {
+  e.waitUntil(Promise.all([
+    self.clients.claim(),
+    caches.keys().then((keys) => Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k))))
+  ]));
 });
 
-// Estrategia: Primero red, si falla, caché (para que siempre intente buscar lo nuevo)
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
+self.addEventListener('fetch', (e) => {
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });

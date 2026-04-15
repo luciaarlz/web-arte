@@ -8,14 +8,14 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
-        :root { --bg: #0e1117; --accent: #a569bd; --text: #ffffff; --card-bg: rgba(255, 255, 255, 0.03); }
+        :root { --bg: #0e1117; --accent: #a569bd; --text: #ffffff; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; scroll-behavior: smooth; }
         .header { padding: 40px 20px; text-align: center; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.05); background: linear-gradient(to bottom, #1a1a2e, var(--bg)); }
         .header img { width: 70px; height: 70px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(165, 105, 189, 0.3)); }
         h1 { margin: 0; letter-spacing: 5px; font-weight: 300; text-transform: uppercase; background: linear-gradient(90deg, #fff, var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
         .main-container { width: 95%; max-width: 550px; margin-top: 20px; padding-bottom: 60px; }
-        .art-frame { border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); min-height: 200px; }
-        #display-image { width: 100%; height: auto; display: none; object-fit: contain; }
+        .art-frame { border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); min-height: 250px; position: relative; }
+        #display-image, #camera-feed { width: 100%; height: auto; display: none; object-fit: contain; }
         #placeholder-text { color: #444; padding: 60px 20px; text-align: center; font-size: 0.9rem; }
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
         button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-size: 10px; font-weight: 600; }
@@ -24,13 +24,13 @@
         #status-msg { margin-top: 15px; font-size: 0.75rem; color: var(--accent); text-align: center; font-weight: bold; }
         #result-box { margin-top: 40px; padding: 30px; border-radius: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); display: none; animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-        #main-prediction { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        #main-prediction span { display: block; font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 8px; }
-        #winner-name { font-size: 2.5rem; font-weight: 700; color: var(--accent); text-shadow: 0 0 25px rgba(165, 105, 189, 0.4); margin: 0; }
+        #main-prediction { text-align: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; }
+        #main-prediction span { display: block; font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 3px; }
+        #winner-name { font-size: 2.5rem; font-weight: 700; color: var(--accent); margin: 0; }
         .chart-row { margin-bottom: 15px; }
         .chart-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; color: #aaa; }
         .bar-bg { height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
-        .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1.2s ease-out; }
     </style>
 </head>
 <body>
@@ -40,20 +40,20 @@
     </div>
     <div class="main-container">
         <div class="art-frame">
-            <div id="placeholder-text">SELECCIONA UNA OBRA MAESTRA</div>
+            <div id="placeholder-text">SELECCIONA UNA OBRA O USA LA CÁMARA</div>
             <img id="display-image" src="" alt="Obra">
+            <video id="camera-feed" autoplay playsinline></video>
         </div>
         <canvas id="ai-canvas" width="128" height="128" style="display:none;"></canvas>
-        <div id="status-msg">Cargando motor neuronal...</div>
+        <div id="status-msg">Iniciando sistema neuronal...</div>
         <div class="controls">
             <button onclick="document.getElementById('file-input').click()">🖼️ Galería</button>
-            <button onclick="alert('Cámara próximamente...')">📷 Cámara</button>
+            <button id="cam-btn" onclick="openCamera()">📷 Cámara</button>
             <input type="file" id="file-input" style="display:none" accept="image/*">
-            <button id="btn-analyze" class="analyze-btn" onclick="runInference()" disabled>Iniciando...</button>
+            <button id="btn-analyze" class="analyze-btn" onclick="runInference()" disabled>Esperando Imagen...</button>
         </div>
         <div id="result-box">
             <div id="main-prediction"><span>ESTILO</span><h2 id="winner-name"></h2></div>
-            <p style="font-size:0.65rem; color:#444; text-transform:uppercase; margin-bottom:18px; text-align:center;">Análisis Detallado</p>
             <div id="chart-content"></div>
         </div>
     </div>
@@ -64,23 +64,15 @@
         const statusMsg = document.getElementById('status-msg');
         const btnAnalyze = document.getElementById('btn-analyze');
         const displayImage = document.getElementById('display-image');
+        const video = document.getElementById('camera-feed');
         const aiCanvas = document.getElementById('ai-canvas');
-        const aiCtx = aiCanvas.getContext('2d');
-
-        function softmax(logits) {
-            const maxLogit = Math.max(...logits);
-            const scores = logits.map(l => Math.exp(l - maxLogit));
-            const total = scores.reduce((a, b) => a + b);
-            return scores.map(s => s / total);
-        }
+        const aiCtx = aiCanvas.getContext('2d', { willReadFrequently: true });
 
         async function init() {
             try {
                 session = await ort.InferenceSession.create('./model.onnx', { executionProviders: ['wasm'] });
-                statusMsg.innerText = "✅ MODELO CARGADO";
-                btnAnalyze.disabled = false;
-                btnAnalyze.innerText = "✨ ANALIZAR PINCELADAS";
-            } catch (e) { statusMsg.innerText = "❌ ERROR AL CARGAR"; }
+                statusMsg.innerText = "✅ SISTEMA LISTO";
+            } catch (e) { statusMsg.innerText = "❌ ERROR CARGA MODELO"; }
         }
         init();
 
@@ -89,63 +81,85 @@
             reader.onload = event => {
                 displayImage.src = event.target.result;
                 displayImage.style.display = 'block';
+                video.style.display = 'none';
                 document.getElementById('placeholder-text').style.display = 'none';
-                document.getElementById('result-box').style.display = 'none';
+                btnAnalyze.disabled = false;
+                btnAnalyze.innerText = "✨ ANALIZAR PINCELADAS";
             };
             reader.readAsDataURL(e.target.files[0]);
         };
 
+        async function openCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                displayImage.style.display = 'none';
+                document.getElementById('placeholder-text').style.display = 'none';
+                const camBtn = document.getElementById('cam-btn');
+                camBtn.innerText = "📸 DISPARAR";
+                camBtn.onclick = capturePhoto;
+            } catch (err) { alert("Sin acceso a cámara"); }
+        }
+
+        function capturePhoto() {
+            aiCtx.drawImage(video, 0, 0, 128, 128);
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
+            tempCanvas.getContext('2d').drawImage(video, 0, 0);
+            displayImage.src = tempCanvas.toDataURL('image/png');
+            displayImage.style.display = 'block';
+            video.srcObject.getTracks().forEach(t => t.stop());
+            video.style.display = 'none';
+            const camBtn = document.getElementById('cam-btn');
+            camBtn.innerText = "📷 CÁMARA";
+            camBtn.onclick = openCamera;
+            btnAnalyze.disabled = false;
+        }
+
         async function runInference() {
-            if(!session || !displayImage.src) return;
-            statusMsg.innerText = "DESCIFRANDO ARTE...";
-            aiCtx.drawImage(displayImage, 0, 0, 128, 128);
+            if(!session) return;
+            statusMsg.innerText = "ANALIZANDO...";
+            if(displayImage.style.display === 'block') aiCtx.drawImage(displayImage, 0, 0, 128, 128);
             const imgData = aiCtx.getImageData(0, 0, 128, 128);
             const input = new Float32Array(1 * 3 * 128 * 128);
-            for (let i = 0; i < 128 * 128; i++) {
-                input[i] = (imgData.data[i * 4] / 255 - 0.485) / 0.229;
-                input[i + 16384] = (imgData.data[i * 4 + 1] / 255 - 0.456) / 0.224;
-                input[i + 32768] = (imgData.data[i * 4 + 2] / 255 - 0.406) / 0.225;
+            for (let i = 0; i < 16384; i++) {
+                input[i] = (imgData.data[i*4]/255-0.485)/0.229;
+                input[i+16384] = (imgData.data[i*4+1]/255-0.456)/0.224;
+                input[i+32768] = (imgData.data[i*4+2]/255-0.406)/0.225;
             }
-            const tensor = new ort.Tensor('float32', input, [1, 3, 128, 128]);
-            const output = await session.run({ input: tensor });
-            const probabilities = softmax(Array.from(output.output.data));
-            displayResults(probabilities);
+            const output = await session.run({ input: new ort.Tensor('float32', input, [1, 3, 128, 128]) });
+            const logits = Array.from(output.output.data);
+            const maxLogit = Math.max(...logits);
+            const scores = logits.map(l => Math.exp(l - maxLogit));
+            const total = scores.reduce((a, b) => a + b);
+            const probs = scores.map(s => s / total);
+            displayResults(probs);
             statusMsg.innerText = "ANÁLISIS COMPLETADO";
         }
 
         function displayResults(probs) {
-            const resultBox = document.getElementById('result-box');
-            resultBox.style.display = 'block';
+            const resBox = document.getElementById('result-box');
+            resBox.style.display = 'block';
             const results = probs.map((p, i) => ({ name: classes[i], prob: p })).sort((a, b) => b.prob - a.prob);
             document.getElementById('winner-name').innerText = results[0].name;
-            const chartContent = document.getElementById('chart-content');
-            chartContent.innerHTML = "";
-            results.forEach(res => {
-                const percentage = (res.prob * 100).toFixed(1);
-                chartContent.innerHTML += `<div class="chart-row"><div class="chart-label"><span>${res.name}</span><span>${percentage}%</span></div><div class="bar-bg"><div class="bar-fill" style="width: ${percentage}%"></div></div></div>`;
+            const content = document.getElementById('chart-content');
+            content.innerHTML = "";
+            results.forEach(r => {
+                const p = (r.prob * 100).toFixed(1);
+                content.innerHTML += `<div class="chart-row"><div class="chart-label"><span>${r.name}</span><span>${p}%</span></div><div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div></div>`;
             });
-            setTimeout(() => { resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+            setTimeout(() => resBox.scrollIntoView({ behavior: 'smooth' }), 100);
         }
 
-        // --- SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA ---
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js').then(reg => {
                 reg.onupdatefound = () => {
-                    const installingWorker = reg.installing;
-                    installingWorker.onstatechange = () => {
-                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            window.location.reload();
-                        }
-                    };
+                    const i = reg.installing;
+                    i.onstatechange = () => { if (i.state === 'installed' && navigator.serviceWorker.controller) location.reload(); };
                 };
             });
-            let refreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
-                    window.location.reload();
-                    refreshing = true;
-                }
-            });
+            navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
         }
     </script>
 </body>
