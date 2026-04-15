@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artstyle-v2';
+const CACHE_NAME = 'artstyle-v3'; 
 const ASSETS = ['./', './index.html', './logo.png', './manifest.json', './model.onnx'];
 
 self.addEventListener('install', (e) => {
