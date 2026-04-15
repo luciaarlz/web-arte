@@ -3,74 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArtVision AI | Curador Experto</title>
+    <title>ArtVision AI | Galería Pro</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
-        :root { --bg: #0e1117; --accent: #a569bd; --text: #ffffff; --card-bg: rgba(255, 255, 255, 0.03); }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .header { padding: 40px 20px; text-align: center; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        h1 { margin: 0; letter-spacing: 5px; font-weight: 200; text-transform: uppercase; background: linear-gradient(90deg, #fff, #777); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-        .main-container { width: 95%; max-width: 600px; margin-top: 30px; padding-bottom: 50px; }
+        :root { 
+            --bg: #0e1117; 
+            --accent: #a569bd; 
+            --text: #ffffff; 
+            --card-bg: rgba(255, 255, 255, 0.03); 
+        }
         
-        /* Estilo Galería Minimalista */
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+
+        .header { 
+            padding: 30px 20px; 
+            text-align: center; 
+            width: 100%; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+        }
+
+        h1 { 
+            margin: 0; 
+            letter-spacing: 4px; 
+            font-weight: 300; 
+            text-transform: uppercase; 
+            background: linear-gradient(90deg, #fff, var(--accent)); 
+            -webkit-background-clip: text; 
+            background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+
+        .main-container { 
+            width: 95%; 
+            max-width: 550px; 
+            margin-top: 20px; 
+            padding-bottom: 40px; 
+        }
+
+        /* MARCO DE ARTE MEJORADO */
         .art-frame { 
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 12px;
-            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            background: #000; /* Fondo negro para que la obra destaque */
             overflow: hidden;
-            position: relative;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-            display: flex; justify-content: center; align-items: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            min-height: 200px; /* Se expandirá con la imagen */
         }
+
         canvas { 
-            width: 100%; /* Imagen ocupa todo el ancho */
-            height: auto; /* Mantiene la proporción */
+            width: 100%; /* Ocupa todo el ancho del contenedor */
+            height: auto; /* Mantiene la proporción real */
             display: none;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-        #placeholder-text { color: #555; text-align: center; padding: 50px 20px; font-style: italic; }
 
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
-        button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 18px; border-radius: 12px; cursor: pointer; transition: 0.3s; text-transform: uppercase; font-size: 11px; letter-spacing: 2px; }
+        #placeholder-text { 
+            color: #444; 
+            padding: 60px 20px; 
+            text-align: center;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .controls { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            margin-top: 20px; 
+        }
+
+        button { 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            color: white; 
+            padding: 15px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            text-transform: uppercase; 
+            font-size: 10px; 
+            font-weight: 600; 
+        }
+
         button:hover:not(:disabled) { background: white; color: black; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .analyze-btn { grid-column: span 2; background: linear-gradient(45deg, #6a11cb, #2575fc); border: none; font-size: 13px; font-weight: bold; }
-        #status-msg { margin-top: 15px; font-size: 0.8rem; color: #888; text-align: center; }
-
-        /* Contenedor de Resultados y Gráfico */
-        #result-box { margin-top: 30px; padding: 25px; border-radius: 15px; background: rgba(165, 105, 189, 0.05); border: 1px solid rgba(165, 105, 189, 0.1); display: none; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Gráfico de Barras */
-        .chart-container { margin-top: 25px; display: flex; flex-direction: column; gap: 10px; }
-        .chart-row { display: flex; align-items: center; gap: 10px; }
-        .style-label { width: 150px; text-align: right; font-size: 0.8rem; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .bar-container { flex-grow: 1; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
-        .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.8s ease-out; }
-        .perc-label { width: 40px; text-align: left; font-size: 0.8rem; color: #888; }
+        .analyze-btn { 
+            grid-column: span 2; 
+            background: linear-gradient(45deg, #6a11cb, #2575fc); 
+            border: none; 
+            font-size: 12px; 
+        }
+
+        #status-msg { 
+            margin-top: 15px; 
+            font-size: 0.75rem; 
+            color: var(--accent); 
+            text-align: center; 
+            font-weight: bold;
+        }
+
+        /* PANEL DE RESULTADOS Y DIAGRAMA */
+        #result-box { 
+            margin-top: 25px; 
+            padding: 20px; 
+            border-radius: 15px; 
+            background: rgba(255,255,255,0.02); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            display: none; 
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .chart-row { 
+            margin-bottom: 12px; 
+        }
+
+        .chart-label { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 0.75rem; 
+            margin-bottom: 5px; 
+            color: #aaa; 
+        }
+
+        .bar-bg { 
+            height: 6px; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 3px; 
+            overflow: hidden; 
+        }
+
+        .bar-fill { 
+            height: 100%; 
+            background: var(--accent); 
+            width: 0%; 
+            transition: width 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
     </style>
 </head>
 <body>
+
     <div class="header"><h1>ArtVision AI</h1></div>
+    
     <div class="main-container">
-        <div class="art-frame">
-            <div id="placeholder-text">🎨 Selecciona una obra para analizar</div>
+        <div class="art-frame" id="frame">
+            <div id="placeholder-text">SELECCIONA UNA OBRA MAESTRA</div>
             <canvas id="canvas"></canvas>
         </div>
-        <div id="status-msg">Iniciando sistema...</div>
+
+        <div id="status-msg">Iniciando motor neuronal...</div>
+
         <div class="controls">
             <button onclick="document.getElementById('file-input').click()">🖼️ Galería</button>
-            <button onclick="startCamera()">📷 Cámara</button>
+            <button onclick="alert('Cámara en pruebas...')">📷 Cámara</button>
             <input type="file" id="file-input" style="display:none" accept="image/*">
-            <button id="btn-analyze" class="analyze-btn" onclick="runInference()" disabled>Cargando Modelo (45MB)...</button>
+            <button id="btn-analyze" class="analyze-btn" onclick="runInference()" disabled>Cargando Inteligencia...</button>
         </div>
+
         <div id="result-box">
-            <p style="margin:0; font-size:0.7rem; color:#aaa; text-transform:uppercase;">Predicción Principal</p>
-            <h2 id="style-name" style="margin:5px 0; color:var(--accent); letter-spacing: 1px;"></h2>
-            <div id="confidence-bar-top" style="height:4px; background:#333; width:100%; margin-top:10px; border-radius:2px;"><div id="confidence-fill-top" style="height:100%; background:var(--accent); width:0%; transition:width 1s ease;"></div></div>
-            
-            <div id="chart" class="chart-container"></div>
+            <p style="text-align:center; font-size:0.6rem; color:#666; text-transform:uppercase; margin-bottom:15px;">Análisis de Estilo</p>
+            <div id="chart-content"></div>
         </div>
     </div>
 
@@ -80,93 +186,97 @@
         const statusMsg = document.getElementById('status-msg');
         const btnAnalyze = document.getElementById('btn-analyze');
 
+        // Función Softmax para obtener porcentajes reales
+        function softmax(logits) {
+            const maxLogit = Math.max(...logits);
+            const scores = logits.map(l => Math.exp(l - maxLogit));
+            const total = scores.reduce((a, b) => a + b);
+            return scores.map(s => s / total);
+        }
+
         async function init() {
             try {
+                // Usamos WASM para máxima estabilidad como se ve en tu consola
                 session = await ort.InferenceSession.create('./model.onnx', { executionProviders: ['wasm'] });
-                statusMsg.innerText = "✅ Sistema Listo"; btnAnalyze.innerText = "✨ ANALIZAR PINCELADAS"; btnAnalyze.disabled = false;
-            } catch (e) { statusMsg.innerText = "❌ Error al cargar modelo"; console.error(e); }
+                statusMsg.innerText = "✅ MODELO LISTO";
+                btnAnalyze.disabled = false;
+                btnAnalyze.innerText = "✨ ANALIZAR PINCELADAS";
+                console.log("Modelo ONNX cargado correctamente");
+            } catch (e) {
+                statusMsg.innerText = "❌ ERROR AL CARGAR MODELO";
+            }
         }
         init();
 
-        // Manejo de Imagen
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+
         document.getElementById('file-input').onchange = e => {
             const reader = new FileReader();
             reader.onload = event => {
                 const img = new Image();
                 img.onload = () => {
-                    canvas.width = 128; canvas.height = 128; // Tamaño interno para la IA
+                    // Ajustamos el canvas para que se vea grande pero la IA reciba su tamaño (128x128)
+                    canvas.width = 128;
+                    canvas.height = 128;
                     ctx.drawImage(img, 0, 0, 128, 128);
-                    canvas.style.display = 'block'; document.getElementById('placeholder-text').style.display = 'none';
-                    document.getElementById('result-box').style.display = 'none'; // Ocultar resultados previos
+                    canvas.style.display = 'block';
+                    document.getElementById('placeholder-text').style.display = 'none';
+                    document.getElementById('result-box').style.display = 'none';
                 };
                 img.src = event.target.result;
-            }; reader.readAsDataURL(e.target.files[0]);
+            };
+            reader.readAsDataURL(e.target.files[0]);
         };
-
-        // Función Matemática Softmax (CRÍTICA PARA EL ACUERDO)
-        function softmax(logits) {
-            const maxLogit = Math.max(...logits);
-            const scores = logits.map(l => Math.exp(l - maxLogit));
-            const totalScore = scores.reduce((a, b) => a + b);
-            return scores.map(s => s / totalScore);
-        }
 
         async function runInference() {
             if(!session) return;
-            statusMsg.innerText = "Analizando composición artística...";
-            btnAnalyze.disabled = true;
+            statusMsg.innerText = "DESCODIFICANDO ESTILO...";
+            
+            const imgData = ctx.getImageData(0, 0, 128, 128);
+            const input = new Float32Array(1 * 3 * 128 * 128);
+            
+            // Normalización según ImageNet (como se entrenan las ResNet)
+            for (let i = 0; i < 128 * 128; i++) {
+                input[i] = (imgData.data[i * 4] / 255 - 0.485) / 0.229;           // R
+                input[i + 16384] = (imgData.data[i * 4 + 1] / 255 - 0.456) / 0.224; // G
+                input[i + 32768] = (imgData.data[i * 4 + 2] / 255 - 0.406) / 0.225; // B
+            }
 
-            try {
-                const imgData = ctx.getImageData(0, 0, 128, 128);
-                const input = new Float32Array(1 * 3 * 128 * 128);
-                for (let i = 0; i < 128 * 128; i++) {
-                    input[i] = (imgData.data[i * 4] / 255 - 0.485) / 0.229; // R
-                    input[i + 16384] = (imgData.data[i * 4 + 1] / 255 - 0.456) / 0.224; // G
-                    input[i + 32768] = (imgData.data[i * 4 + 2] / 255 - 0.406) / 0.225; // B
-                }
+            const tensor = new ort.Tensor('float32', input, [1, 3, 128, 128]);
+            const output = await session.run({ input: tensor });
+            const probabilities = softmax(Array.from(output.output.data));
 
-                const tensor = new ort.Tensor('float32', input, [1, 3, 128, 128]);
-                const output = await session.run({ input: tensor });
-                
-                // Aplicar Softmax para obtener porcentajes reales
-                const probabilities = softmax(output.output.data);
-                
-                // Encontrar el mejor índice
-                let maxIdx = probabilities.indexOf(Math.max(...probabilities));
-                
-                // Mostrar resultados principales
-                document.getElementById('result-box').style.display = 'block';
-                document.getElementById('style-name').innerText = classes[maxIdx];
-                document.getElementById('confidence-fill-top').style.width = (probabilities[maxIdx] * 100) + "%";
-                
-                // Dibujar Gráfico de Barras de todos los estilos
-                drawChart(probabilities);
-                statusMsg.innerText = "Análisis completado";
-            } catch (e) { statusMsg.innerText = "❌ Error en análisis"; console.error(e); }
-            btnAnalyze.disabled = false;
+            displayResults(probabilities);
+            statusMsg.innerText = "ANÁLISIS COMPLETADO";
         }
 
-        function drawChart(probs) {
-            const chartCont = document.getElementById('chart');
-            chartCont.innerHTML = ""; // Limpiar gráfico anterior
+        function displayResults(probs) {
+            const resultBox = document.getElementById('result-box');
+            const chartContent = document.getElementById('chart-content');
+            resultBox.style.display = 'block';
+            chartContent.innerHTML = "";
 
-            probs.forEach((prob, idx) => {
-                const percentage = (prob * 100).toFixed(1);
-                const row = document.createElement('div');
-                row.className = 'chart-row';
-                row.innerHTML = `
-                    <div class="style-label">${classes[idx]}</div>
-                    <div class="bar-container"><div class="bar-fill" style="width: ${percentage}%"></div></div>
-                    <div class="perc-label">${percentage}%</div>
+            // Ordenamos para ver el ganador primero
+            const results = probs.map((p, i) => ({ name: classes[i], prob: p }))
+                                 .sort((a, b) => b.prob - a.prob);
+
+            results.forEach(res => {
+                const percentage = (res.prob * 100).toFixed(1);
+                const row = `
+                    <div class="chart-row">
+                        <div class="chart-label">
+                            <span>${res.name}</span>
+                            <span>${percentage}%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
                 `;
-                chartCont.appendChild(row);
+                chartContent.innerHTML += row;
             });
         }
-
-        function startCamera() { alert("Acceso a cámara en desarrollo. Usa Galería por ahora."); }
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); }
     </script>
 </body>
 </html>
