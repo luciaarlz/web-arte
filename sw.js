@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artstyle-v4'; // Actualizado para forzar la carga del nuevo comportamiento
+const CACHE_NAME = 'artstyle-v5'; // Forzar actualización de lógica de umbral
 const ASSETS = ['./', './index.html', './logo.png', './manifest.json', './model.onnx'];
 
 self.addEventListener('install', (e) => {

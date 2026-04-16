@@ -27,7 +27,7 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
         #main-prediction { text-align: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; }
         #main-prediction span { display: block; font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 3px; }
-        #winner-name { font-size: 2.5rem; font-weight: 700; color: var(--accent); margin: 0; }
+        #winner-name { font-size: 1.8rem; font-weight: 700; color: var(--accent); margin: 10px 0; line-height: 1.2; }
         .chart-row { margin-bottom: 15px; }
         .chart-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; color: #aaa; }
         .bar-bg { height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
@@ -54,7 +54,7 @@
             <button id="btn-analyze" class="analyze-btn" onclick="runInference()" disabled>Esperando Imagen...</button>
         </div>
         <div id="result-box">
-            <div id="main-prediction"><span>ESTILO</span><h2 id="winner-name"></h2></div>
+            <div id="main-prediction"><span>VERDICTO</span><h2 id="winner-name"></h2></div>
             <div id="chart-content"></div>
         </div>
     </div>
@@ -101,9 +101,7 @@
         };
 
         async function openCamera() {
-            // AL ABRIR LA CÁMARA: Reseteamos el botón de análisis
             disableAnalysisButton();
-            
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
                 video.srcObject = stream;
@@ -119,21 +117,15 @@
         function capturePhoto() {
             aiCtx.drawImage(video, 0, 0, 128, 128);
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = video.videoWidth; 
-            tempCanvas.height = video.videoHeight;
+            tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
             tempCanvas.getContext('2d').drawImage(video, 0, 0);
             displayImage.src = tempCanvas.toDataURL('image/png');
             displayImage.style.display = 'block';
-            
-            if(video.srcObject) {
-                video.srcObject.getTracks().forEach(t => t.stop());
-            }
+            if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
             video.style.display = 'none';
-            
             const camBtn = document.getElementById('cam-btn');
             camBtn.innerText = "📷 CÁMARA";
             camBtn.onclick = openCamera;
-            
             enableAnalysisButton(); 
         }
 
@@ -162,7 +154,20 @@
             const resBox = document.getElementById('result-box');
             resBox.style.display = 'block';
             const results = probs.map((p, i) => ({ name: classes[i], prob: p })).sort((a, b) => b.prob - a.prob);
-            document.getElementById('winner-name').innerText = results[0].name;
+            
+            const winnerElement = document.getElementById('winner-name');
+            
+            // Lógica de validación del 50%
+            if (results[0].prob < 0.50) {
+                winnerElement.innerText = "No pertenece a ninguno de nuestros estilos analizados";
+                winnerElement.style.fontSize = "1.2rem";
+                winnerElement.style.color = "#ff4d4d"; // Rojo suave para indicar incertidumbre
+            } else {
+                winnerElement.innerText = results[0].name;
+                winnerElement.style.fontSize = "2.5rem";
+                winnerElement.style.color = "var(--accent)";
+            }
+
             const content = document.getElementById('chart-content');
             content.innerHTML = "";
             results.forEach(r => {
